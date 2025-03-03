@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Imagick;
 use App\Models\File;
+use App\Models\Setting;
+use Illuminate\Http\Request;
 use Smalot\PdfParser\Parser; // For PDF analysis
 
 class FileController extends Controller
@@ -55,5 +57,24 @@ class FileController extends Controller
         $base_price = 0.10; // Example base price per page
         $color_multiplier = $impression == 'color' ? 1.5 : 1;
         return $pages * $copies * $base_price * $color_multiplier;
+    }
+
+    public function analyze(Request $request)
+    {
+        $file = $request->file('file');
+        $numPages = 0;
+
+        if ($file->getClientOriginalExtension() == 'pdf') {
+            $parser = new Parser();
+            $pdf = $parser->parseFile($file->getPathname());
+            $numPages = count($pdf->getPages());
+        } elseif (in_array($file->getClientOriginalExtension(), ['jpg', 'png'])) {
+            $numPages = 1; // Images are single-page
+        } elseif ($file->getClientOriginalExtension() == 'tiff') {
+            $image = new Imagick($file->getPathname());
+            $numPages = $image->getNumberImages();
+        }
+
+        return response()->json(['num_pages' => $numPages]);
     }
 }

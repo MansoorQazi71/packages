@@ -15,14 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->string('file_path');
-            $table->integer('number_of_pages')->nullable();
+            $table->integer('num_pages')->nullable();
             $table->integer('copies')->default(1);
+            $table->decimal('price', 10, 2)->nullable();
             $table->enum('impression', ['color', 'black_white', 'mixed']);
             $table->enum('orientation', ['portrait', 'landscape']);
-            $table->enum('paper_size', ['A4', 'A3']);
+            $table->enum('size', ['A4', 'A3']);
             $table->boolean('front_back')->default(false);
             $table->boolean('binding')->default(false);
-            $table->decimal('price', 10, 2)->nullable();
             $table->timestamps();
         });
     }

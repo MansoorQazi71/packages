@@ -5,22 +5,20 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Setting;
 
-class AdminController extends Controller
-{
-    public function updateSettings(Request $request)
-    {
-        $request->validate([
-            'print_module' => 'required|in:on,off',
-            'payment_module' => 'required|in:on,off',
-            'smtp_module' => 'required|in:on,off',
-            'price_module' => 'required|in:on,off',
-        ]);
+class AdminController extends Controller {
+    public function showSettings() {
+        $settings = Setting::all();
+        return view('admin.settings', compact('settings'));
+    }
 
-        foreach ($request->all() as $key => $value) {
-            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+    public function updateSettings(Request $request) {
+        $settingsKeys = ['print_module', 'payment_module', 'smtp_module', 'price_module'];
+    
+        foreach ($settingsKeys as $key) {
+            Setting::setValue($key, $request->has($key) ? 'on' : 'off');
         }
-
+    
         return response()->json(['message' => 'Settings updated successfully!']);
     }
+    
 }
-
