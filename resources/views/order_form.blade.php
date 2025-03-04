@@ -115,65 +115,6 @@
         </form>
     </div>
 
-    {{-- <script>
-        $(document).ready(function () {
-        // Add another file input section
-        $('#add-file').click(function () {
-            let fileRow = `
-                <div class="file-entry">
-                    <div class="mb-3">
-                        <input type="file" name="files[]" class="form-control file-input" required>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Number of Pages</label>
-                            <input type="text" name="num_pages[]" class="form-control num-pages" readonly required>
-                        </div>
-                        @if($settings['price_module'])
-                        <div class="col-md-6">
-                            <label class="form-label">Price</label>
-                            <input type="text" name="price[]" class="form-control price-input">
-                        </div>
-                        @endif
-                    </div>
-                </div>
-            `;
-            $('#file-upload-container').append(fileRow);
-        });
-
-        // Detect file selection and calculate pages
-        $(document).on('change', '.file-input', function (event) {
-            let input = $(this);
-            let file = event.target.files[0];
-
-            if (file) {
-                let reader = new FileReader();
-
-                reader.onload = function (e) {
-                    let fileData = e.target.result;
-                    let numPages = 0;
-
-                    if (file.type === 'application/pdf') {
-                        // PDF.js logic to get the number of pages
-                        pdfjsLib.getDocument({data: fileData}).promise.then(function (pdf) {
-                            numPages = pdf.numPages;
-                            input.closest('.file-entry').find('.num-pages').val(numPages);
-                        });
-                    } else if (['image/jpeg', 'image/png'].includes(file.type)) {
-                        // For images, assume 1 page
-                        numPages = 1;
-                        input.closest('.file-entry').find('.num-pages').val(numPages);
-                    } else {
-                        alert('Unsupported file type.');
-                    }
-                };
-
-                reader.readAsArrayBuffer(file);
-            }
-        });
-    });
-    </script> --}}
-
     <!-- Include PDF.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
