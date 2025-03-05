@@ -101,12 +101,169 @@
                     <input type="text" name="commune" class="form-control" required>
                 </div>
             </div>
+
+            {{-- <h4 class="mt-4">Printing Options</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Impression</label><br>
+                    <input type="radio" name="impression" value="color" required> Colour
+                    <input type="radio" name="impression" value="black_white" checked> Black and White
+                    <input type="radio" name="impression" value="mixed"> Mixed
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Orientation</label><br>
+                    <input type="radio" name="orientation" value="portrait" required checked> Portrait
+                    <input type="radio" name="orientation" value="landscape"> Landscape
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Size of Paper</label><br>
+                        <input type="radio" name="size[]" value="A4" required> A4
+                        <input type="radio" name="size[]" value="A3"> A3
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Front and Back</label><br>
+                        <input type="checkbox" name="front_back"> Yes
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Need Binding</label><br>
+                        <input type="checkbox" name="binding"> Yes
+                    </div>
+                </div>
+
+                <!-- Billing Section -->
+                <div class="mt-3">
+                    <input type="checkbox" name="billing_same" value="1" checked> Billing same as shipping
+                </div> --}}
             </div>
             <button type="submit" class="btn btn-primary mt-3">Submit Order</button>
         </form>
     </div>
 
-   
+    {{-- <script>
+        $(document).ready(function () {
+    let uploadedFiles = [];
+
+    $("#dropzone").on("click", function () {
+        $("#fileInput").click();
+    });
+
+    $("#fileInput").on("change", function (event) {
+        handleFiles(event.target.files);
+    });
+
+    $("#dropzone").on("dragover", function (event) {
+        event.preventDefault();
+    });
+
+    $("#dropzone").on("drop", function (event) {
+        event.preventDefault();
+        handleFiles(event.originalEvent.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length === 0) return;
+
+        $("#previewSlider").empty();
+        uploadedFiles = [];
+
+        for (let file of files) {
+            let fileIndex = uploadedFiles.length;
+            uploadedFiles.push(file);
+
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                let fileData = e.target.result;
+                let fileEntry = $("<div class='file-entry mt-2 text-center'></div>");
+
+                if (file.type.startsWith("image/")) {
+                    let img = $("<img>").attr("src", URL.createObjectURL(file)).css("max-width", "100px");
+                    fileEntry.append(img);
+                    addFileFields(file, fileIndex, 1);
+                } else if (file.type === "application/pdf") {
+                    renderPDFPreview(fileData, fileEntry, file, fileIndex);
+                }
+
+                $("#previewSlider").append($("<div class='swiper-slide'></div>").append(fileEntry));
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        $("#previewContainer").fadeIn();
+        $("#continueBtn").fadeIn();
+
+        new Swiper(".swiper-container", {
+            navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+            slidesPerView: 3,
+            spaceBetween: 10,
+        });
+    }
+
+    function renderPDFPreview(fileData, fileEntry, file, fileIndex) {
+        let loadingTask = pdfjsLib.getDocument({ data: fileData });
+        loadingTask.promise.then(function (pdf) {
+            let totalPages = pdf.numPages;
+            pdf.getPage(1).then(function (page) {
+                let scale = 0.5;
+                let viewport = page.getViewport({ scale: scale });
+                let canvas = $("<canvas></canvas>")[0];
+                let context = canvas.getContext("2d");
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                page.render({ canvasContext: context, viewport: viewport }).promise.then(function () {
+                    fileEntry.append(canvas);
+                    addFileFields(file, fileIndex, totalPages);
+                });
+            });
+        });
+    }
+
+    function addFileFields(file, index, numPages) {
+        $("#file-upload-container").append(`
+            <div class="file-group mt-3">
+                <input type="hidden" name="files[${index}][name]" value="${file.name}">
+                <label>Pages</label>
+                <input type="text" name="files[${index}][num_pages]" class="form-control num-pages-input" data-index="${index}" value="${numPages}" readonly>
+            </div>
+        `);
+    }
+
+    $("#continueBtn").on("click", function () {
+        $("#printForm").fadeIn();
+        $("html, body").animate({ scrollTop: $("#printForm").offset().top }, 500);
+    });
+
+    $("#printForm").on("submit", function (e) {
+        e.preventDefault();
+        let formData = new FormData(this);
+
+        uploadedFiles.forEach((file, index) => {
+            formData.append(`files[${index}]`, file);
+            let numPages = parseInt($(`input[name='files[${index}][num_pages]']`).val()) || 1;
+            formData.append(`num_pages[${index}]`, numPages);
+        });
+
+        $.ajax({
+            url: "/order/submit",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function () {
+                alert("Order submitted successfully!");
+            },
+            error: function (xhr) {
+                console.error(xhr.responseText);
+                alert("Error submitting order. Please try again.");
+            }
+        });
+    });
+});
+
+    </script> --}}
     <script>
         $(document).ready(function() {
             let uploadedFiles = [];
@@ -192,6 +349,16 @@
                     });
                 });
             }
+
+            // function addFileFields(file, index, numPages) {
+            //     $("#file-upload-container").append(`
+            //         <div class="file-group mt-3">
+            //             <input type="hidden" name="files[${index}][name]" value="${file.name}">
+            //             <label>Pages</label>
+            //             <input type="text" name="files[${index}][num_pages]" class="form-control num-pages-input" value="${numPages}" readonly>
+            //         </div>
+            //     `);
+            // }
             function addFileFields(file, index, numPages) {
                 $("#file-upload-container").append(`
         <div class="file-group mt-3 p-3 border rounded">
