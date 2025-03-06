@@ -41,6 +41,18 @@
         #printForm {
             display: none;
         }
+
+        .file-preview {
+            width: 150px;
+            /* Set a fixed width */
+            height: 200px;
+            /* Set a fixed height */
+            object-fit: contain;
+            /* Ensure image fits well */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+        }
     </style>
 </head>
 
@@ -101,7 +113,8 @@
                 </div>
             </div>
     </div>
-    <button type="button" id="addAnotherFileBtn" class="btn btn-warning mt-3" style="display: none;">➕ Add Another File</button>
+    <button type="button" id="addAnotherFileBtn" class="btn btn-warning mt-3" style="display: none;">➕ Add Another
+        File</button>
     <button type="submit" class="btn btn-primary mt-3">Submit Order</button>
     </form>
     </div>
@@ -414,10 +427,14 @@
                 });
 
                 if (file.type.startsWith("image/")) {
-                    let img = $("<img>").attr("src", URL.createObjectURL(file)).css("max-width", "100px");
-                    fileEntry.append(img).append(removeBtn);
-                    addFileFields(file, fileIndex, 1);
-                } else if (file.type === "application/pdf") {
+    let img = $("<img>")
+        .attr("src", URL.createObjectURL(file))
+        .addClass("file-preview"); // Apply fixed size
+    
+    fileEntry.append(img).append(removeBtn);
+    addFileFields(file, fileIndex, 1);
+}
+ else if (file.type === "application/pdf") {
                     renderPDFPreview(fileData, fileEntry, file, fileIndex, removeBtn);
                 }
 
@@ -530,6 +547,7 @@
             processData: false,
             success: function () {
                 alert("Order submitted successfully!");
+                location.reload();
             },
             error: function (xhr) {
                 console.error(xhr.responseText);
@@ -547,6 +565,214 @@
 });
 
     </script>
+    {{-- <script>
+        $(document).ready(function () {
+    let uploadedFiles = [];
+
+    // Ensure file input is hidden but functional
+    $("#fileInput").css({
+        position: "absolute",
+        left: "-9999px"
+    });
+
+    // Click anywhere on dropzone triggers file input
+    $("#dropzone").on("click", function (event) {
+        if (!$(event.target).is("#fileInput")) {
+            $("#fileInput").click();
+        }
+    });
+
+    // Handle file selection
+    $("#fileInput").on("change", function (event) {
+        handleFiles(event.target.files);
+    });
+
+    // Drag-and-drop functionality
+    $("#dropzone").on("dragover", function (event) {
+        event.preventDefault();
+    });
+
+    $("#dropzone").on("drop", function (event) {
+        event.preventDefault();
+        handleFiles(event.originalEvent.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length === 0) return;
+
+        for (let file of files) {
+            let fileIndex = uploadedFiles.length;
+            uploadedFiles.push(file);
+
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                let fileData = e.target.result;
+                let fileEntry = $("<div class='file-entry'></div>").css({
+                    "width": "150px",
+                    "height": "200px",
+                    "display": "flex",
+                    "align-items": "center",
+                    "justify-content": "center",
+                    "border": "1px solid #ccc",
+                    "border-radius": "5px",
+                    "background-color": "white",
+                    "position": "relative"
+                });
+
+                let removeBtn = $("<button class='btn btn-danger btn-sm remove-file' data-index='" + fileIndex + "'>Remove</button>").css({
+                    "position": "absolute",
+                    "top": "5px",
+                    "right": "5px"
+                });
+
+                removeBtn.on("click", function () {
+                    let index = $(this).data("index");
+                    uploadedFiles.splice(index, 1);
+                    fileEntry.remove();
+                    $(`.file-group[data-index='${index}']`).remove();
+                });
+
+                if (file.type.startsWith("image/")) {
+                    let img = $("<img>")
+                        .attr("src", fileData)
+                        .addClass("file-preview")
+                        .css({
+                            "width": "100%",
+                            "height": "100%",
+                            "object-fit": "contain" // Ensures consistency
+                        });
+
+                    fileEntry.append(img).append(removeBtn);
+                    addFileFields(file, fileIndex, 1);
+                } else if (file.type === "application/pdf") {
+                    renderPDFPreview(fileData, fileEntry, file, fileIndex, removeBtn);
+                }
+
+                $("#previewSlider").append($("<div class='swiper-slide'></div>").append(fileEntry));
+            };
+
+            reader.readAsDataURL(file); // Use DataURL to fix first-upload issue
+        }
+
+        $("#previewContainer").fadeIn();
+        $("#continueBtn").fadeIn();
+
+        new Swiper(".swiper-container", {
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev"
+            },
+            slidesPerView: 3,
+            spaceBetween: 10
+        });
+    }
+
+    function renderPDFPreview(fileData, fileEntry, file, fileIndex, removeBtn) {
+        let loadingTask = pdfjsLib.getDocument({ data: fileData });
+        loadingTask.promise.then(function (pdf) {
+            let totalPages = pdf.numPages;
+            pdf.getPage(1).then(function (page) {
+                let scale = 1; // Adjust scale for clear preview
+                let viewport = page.getViewport({ scale: scale });
+                let canvas = $("<canvas></canvas>")[0];
+                let context = canvas.getContext("2d");
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise.then(function () {
+                    fileEntry.append(canvas);
+                    fileEntry.append(removeBtn);
+                    addFileFields(file, fileIndex, totalPages);
+                });
+            });
+        });
+    }
+
+    function addFileFields(file, index, numPages) {
+        $("#file-upload-container").append(`
+            <div class="file-group mt-3 p-3 border rounded" data-index="${index}">
+                <h5>File: ${file.name}</h5>
+                <input type="hidden" name="files[${index}][name]" value="${file.name}">
+
+                <label>Number of Pages</label>
+                <input type="text" name="files[${index}][num_pages]" class="form-control" value="${numPages}" readonly>
+
+                <label>Size of Paper</label>
+                <select name="files[${index}][size]" class="form-control">
+                    <option value="A4">A4</option>
+                    <option value="A3">A3</option>
+                </select>
+
+                <label>Impression</label>
+                <select name="files[${index}][impression]" class="form-control">
+                    <option value="color">Color</option>
+                    <option value="black_white">Black & White</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+
+                <label>Orientation</label>
+                <select name="files[${index}][orientation]" class="form-control">
+                    <option value="portrait">Portrait</option>
+                    <option value="landscape">Landscape</option>
+                </select>
+
+                <label>Front and Back</label>
+                <input type="checkbox" name="files[${index}][front_back]" value="1">
+
+                <label>Need Binding</label>
+                <input type="checkbox" name="files[${index}][binding]" value="1">
+            </div>
+        `);
+    }
+
+    $("#continueBtn").on("click", function () {
+        $("#previewContainer").fadeOut();
+        $("#dropzone").fadeOut();
+        $("#printForm").fadeIn();
+        $("#addAnotherFileBtn").fadeIn();
+        $("html, body").animate({
+            scrollTop: $("#printForm").offset().top
+        }, 500);
+    });
+
+    $("#printForm").on("submit", function (e) {
+        e.preventDefault();
+        let formData = new FormData(this);
+
+        uploadedFiles.forEach((file, index) => {
+            formData.append(`files[${index}]`, file);
+            let numPages = parseInt($(`input[name='files[${index}][num_pages]']`).val()) || 1;
+            formData.append(`num_pages[${index}]`, numPages);
+        });
+
+        $.ajax({
+            url: "/order/submit",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function () {
+                alert("Order submitted successfully!");
+            },
+            error: function (xhr) {
+                console.error(xhr.responseText);
+                alert("Error submitting order. Please try again.");
+            }
+        });
+    });
+
+    $("#addAnotherFileBtn").on("click", function () {
+        $("#dropzone").fadeIn();
+        $("#previewContainer").hide();
+        $("#printForm").hide();
+        $(this).hide();
+    });
+
+});
+
+    </script> --}}
 </body>
 
 </html>
