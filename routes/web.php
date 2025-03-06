@@ -23,8 +23,6 @@ Route::get('/admin/settings', function () {
 Route::post('/admin/settings/update', [AdminController::class, 'updateSettings'])
     ->name('admin.settings.update');
 
-
-Route::post('/admin/settings/update', [AdminController::class, 'updateSettings'])->middleware('auth');
 Route::get('/register', [RegisteredUserController::class, 'create'])
     ->middleware('guest')
     ->name('register');
