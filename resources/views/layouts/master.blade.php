@@ -68,6 +68,57 @@
             top: 0;
             z-index: 1100;
         }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            /* Space between buttons */
+            margin-top: 20px;
+        }
+
+        .swiper-container {
+            width: 100%;
+            /* Adjust width for better alignment */
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .swiper-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+        }
+
+        .swiper-slide {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .file-preview {
+            width: 180px;
+            /* Control preview size */
+            height: auto;
+            object-fit: contain;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+        }
+
+        .remove-btn {
+            margin-top: 5px;
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
