@@ -70,15 +70,15 @@
     $(document).ready(function () {
     let uploadedFiles = [];
 
-    // Ensure file input is hidden but functional
-    $("#fileInput").css({
+   // Ensure file input is hidden (visually) but still functional
+   $("#fileInput").css({
         position: "absolute",
         left: "-9999px"
     });
 
-    // Click anywhere on dropzone triggers file input
+    // Click anywhere on dropzone should trigger file input
     $("#dropzone").on("click", function (event) {
-        if (!$(event.target).is("#fileInput")) {
+        if (!$(event.target).is("#fileInput")) {  // Prevent self-triggering
             $("#fileInput").click();
         }
     });
@@ -108,51 +108,44 @@
             let reader = new FileReader();
             reader.onload = function (e) {
                 let fileData = e.target.result;
-                let fileEntry = $("<div class='file-entry'></div>").css({
-                    "width": "150px",
-                    "height": "200px",
-                    "display": "flex",
-                    "align-items": "center",
-                    "justify-content": "center",
-                    "border": "1px solid #ccc",
-                    "border-radius": "5px",
-                    "background-color": "white",
-                    "position": "relative"
-                });
+                let fileEntry = $("<div class='file-entry mt-2 text-center position-relative'></div>");
 
-                let removeBtn = $("<button class='btn btn-danger btn-sm remove-file' data-index='" + fileIndex + "'>Remove</button>").css({
-                    "position": "absolute",
-                    "top": "5px",
-                    "right": "5px"
+                let removeBtn = $("<button class='btn btn-danger btn-sm remove-file' data-index='" + fileIndex + "'>Remove</button>");
+                removeBtn.css({
+                    position: "absolute",
+                    top: "5px",
+                    right: "5px"
                 });
 
                 removeBtn.on("click", function () {
                     let index = $(this).data("index");
+
+                    // Remove file from array
                     uploadedFiles.splice(index, 1);
+
+                    // Remove preview entry
                     fileEntry.remove();
+
+                    // Remove corresponding form fields
                     $(`.file-group[data-index='${index}']`).remove();
                 });
 
                 if (file.type.startsWith("image/")) {
-                    let img = $("<img>")
-                        .attr("src", fileData)
-                        .addClass("file-preview")
-                        .css({
-                            "width": "100%",
-                            "height": "100%",
-                            "object-fit": "contain" // Ensures consistency
-                        });
-
-                    fileEntry.append(img).append(removeBtn);
-                    addFileFields(file, fileIndex, 1);
-                } else if (file.type === "application/pdf") {
+    let img = $("<img>")
+        .attr("src", URL.createObjectURL(file))
+        .addClass("file-preview"); // Apply fixed size
+    
+    fileEntry.append(img).append(removeBtn);
+    addFileFields(file, fileIndex, 1);
+}
+ else if (file.type === "application/pdf") {
                     renderPDFPreview(fileData, fileEntry, file, fileIndex, removeBtn);
                 }
 
                 $("#previewSlider").append($("<div class='swiper-slide'></div>").append(fileEntry));
             };
 
-            reader.readAsDataURL(file); // Use DataURL to fix first-upload issue
+            reader.readAsArrayBuffer(file);
         }
 
         $("#previewContainer").fadeIn();
@@ -173,7 +166,7 @@
         loadingTask.promise.then(function (pdf) {
             let totalPages = pdf.numPages;
             pdf.getPage(1).then(function (page) {
-                let scale = 1; // Adjust scale for clear preview
+                let scale = 0.5;
                 let viewport = page.getViewport({ scale: scale });
                 let canvas = $("<canvas></canvas>")[0];
                 let context = canvas.getContext("2d");
@@ -184,7 +177,7 @@
                     viewport: viewport
                 }).promise.then(function () {
                     fileEntry.append(canvas);
-                    fileEntry.append(removeBtn);
+                    fileEntry.append(removeBtn); // Ensure Remove button is appended
                     addFileFields(file, fileIndex, totalPages);
                 });
             });
@@ -228,9 +221,10 @@
         `);
     }
 
+    // Show the print order form when Continue is clicked
     $("#continueBtn").on("click", function () {
-        $("#previewContainer").fadeOut();
-        $("#dropzone").fadeOut();
+        $("#previewContainer").fadeOut(); // Hide the preview section
+        $("#dropzone").fadeOut(); // Hide the file upload section
         $("#printForm").fadeIn();
         $("#addAnotherFileBtn").fadeIn();
         $("html, body").animate({
@@ -238,6 +232,7 @@
         }, 500);
     });
 
+    // Handle form submission
     $("#printForm").on("submit", function (e) {
         e.preventDefault();
         let formData = new FormData(this);
@@ -256,6 +251,7 @@
             processData: false,
             success: function () {
                 alert("Order submitted successfully!");
+                location.reload();
             },
             error: function (xhr) {
                 console.error(xhr.responseText);
@@ -263,13 +259,12 @@
             }
         });
     });
-
-    $("#addAnotherFileBtn").on("click", function () {
-        $("#dropzone").fadeIn();
-        $("#previewContainer").hide();
-        $("#printForm").hide();
-        $(this).hide();
-    });
+    $("#addAnotherFileBtn").on("click", function() {
+    $("#dropzone").fadeIn();  // Show the file upload dropzone
+    $("#previewContainer").hide(); // Hide preview container
+    $("#printForm").hide();  // Hide the form to let users upload more files
+    $(this).hide();
+});
 
 });
 
