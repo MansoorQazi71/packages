@@ -190,7 +190,7 @@ class OrderController extends Controller
 
         // Process each uploaded file
         foreach ($request->file('files', []) as $index => $file) {
-            $path = $file->store('uploads');
+            $path = $file->store('public/uploads'); // Saves in storage/app/public/uploads
 
             File::create([
                 'order_id' => $order->id,
