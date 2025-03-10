@@ -161,8 +161,55 @@ class OrderController extends Controller
 
     //     return redirect()->back()->with('success', 'Order placed successfully!');
     // }
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'name' => 'required|string',
+    //         'email' => 'required|email',
+    //         'phone' => 'required|string',
+    //         'address' => 'required|string',
+    //         'code_postal' => 'required|string',
+    //         'commune' => 'required|string',
+    //         'files' => 'required|array',
+    //         'files.*.num_pages' => 'required|integer',
+    //         'files.*.size' => 'required|string',
+    //         'files.*.impression' => 'required|string',
+    //         'files.*.orientation' => 'required|string',
+    //     ]);
+
+    //     // Create Order
+    //     $order = Order::create([
+    //         'name' => $request->name,
+    //         'email' => $request->email,
+    //         'phone' => $request->phone,
+    //         'address' => $request->address,
+    //         'code_postal' => $request->code_postal,
+    //         'commune' => $request->commune,
+    //         'billing_same' => $request->billing_same ?? 0,
+    //     ]);
+
+    //     // Process each uploaded file
+    //     foreach ($request->file('files', []) as $index => $file) {
+    //         $path = $file->store('public/uploads'); // Saves in storage/app/public/uploads
+
+    //         File::create([
+    //             'order_id' => $order->id,
+    //             'file_path' => $path,
+    //             'file_name' => $file->getClientOriginalName(),
+    //             'num_pages' => $request->input("files.{$index}.num_pages"),
+    //             'size' => $request->input("files.{$index}.size"),
+    //             'impression' => $request->input("files.{$index}.impression"),
+    //             'orientation' => $request->input("files.{$index}.orientation"),
+    //             'front_back' => $request->input("files.{$index}.front_back", 0),
+    //             'binding' => $request->input("files.{$index}.binding", 0),
+    //         ]);
+    //     }
+
+    //     return response()->json(['message' => 'Order submitted successfully!']);
+    // }
     public function store(Request $request)
     {
+        // ✅ Validate incoming request
         $request->validate([
             'name' => 'required|string',
             'email' => 'required|email',
@@ -177,7 +224,7 @@ class OrderController extends Controller
             'files.*.orientation' => 'required|string',
         ]);
 
-        // Create Order
+        // ✅ Create the order in the database
         $order = Order::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -188,23 +235,34 @@ class OrderController extends Controller
             'billing_same' => $request->billing_same ?? 0,
         ]);
 
-        // Process each uploaded file
-        foreach ($request->file('files', []) as $index => $file) {
-            $path = $file->store('public/uploads'); // Saves in storage/app/public/uploads
+        // ✅ Process each uploaded file
+        $uploadedFiles = $request->file('files'); // Gets the uploaded files
+        $fileDetails = $request->input('files', []); // Gets the file details (num_pages, size, etc.)
 
+        foreach ($fileDetails as $index => $fileData) {
+            if (!isset($uploadedFiles[$index])) {
+                return response()->json(['error' => "Missing file for index $index"], 400);
+            }
+
+            $uploadedFile = $uploadedFiles[$index]['file']; // Get the uploaded file instance
+
+            // ✅ Store the file and get the path
+            $path = $uploadedFile->store('public/uploads');
+
+            // ✅ Store file details in the database
             File::create([
                 'order_id' => $order->id,
                 'file_path' => $path,
-                'file_name' => $file->getClientOriginalName(),
-                'num_pages' => $request->input("files.{$index}.num_pages"),
-                'size' => $request->input("files.{$index}.size"),
-                'impression' => $request->input("files.{$index}.impression"),
-                'orientation' => $request->input("files.{$index}.orientation"),
-                'front_back' => $request->input("files.{$index}.front_back", 0),
-                'binding' => $request->input("files.{$index}.binding", 0),
+                'file_name' => $uploadedFile->getClientOriginalName(),
+                'num_pages' => $fileData['num_pages'] ?? 1,
+                'size' => $fileData['size'] ?? 'A4',
+                'impression' => $fileData['impression'] ?? 'black_white',
+                'orientation' => $fileData['orientation'] ?? 'portrait',
+                'front_back' => $fileData['front_back'] ?? 0,
+                'binding' => $fileData['binding'] ?? 0,
             ]);
         }
 
-        return response()->json(['message' => 'Order submitted successfully!']);
+        return response()->json(['message' => 'Order submitted successfully!', 'order_id' => $order->id]);
     }
 }
