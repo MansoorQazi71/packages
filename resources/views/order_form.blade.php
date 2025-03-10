@@ -3,14 +3,18 @@
 @include('layouts.header')
 
 <div class="container py-5">
-    <h2 class="text-center">Print Order Form</h2>
+    <h2 class="text-center">Print Order</h2>
 
     <!-- File Upload Section -->
     <div class="dropzone text-center p-4 border border-primary rounded" id="dropzone">
-        <input type="file" id="fileInput" accept="image/*,application/pdf">
-        <p class="m-0">📂 Drag and Drop Your File Here or <span class="text-warning fw-bold">Click Here to Select</span>
-        </p>
+        <label for="fileInput"
+            class="w-100 h-100 d-flex flex-column align-items-center justify-content-center cursor-pointer">
+            <input type="file" id="fileInput" accept="image/*,application/pdf" hidden>
+            <p class="m-0">📂 Drag and Drop Your File Here or <span class="text-warning fw-bold">Click Here to
+                    Select</span></p>
+        </label>
     </div>
+
 
     <!-- File Preview Section -->
     <div class="preview-container mt-4" id="previewContainer" style="display:none;">
@@ -83,242 +87,6 @@
 
 @include('layouts.footer')
 
-{{-- <script>
-    $(document).ready(function () {
-    let uploadedFiles = [];
-    let currentFileIndex = 0;
-
-    // Hide continue, previous, and next buttons initially
-    $("#continueBtn, #prevBtn, #nextBtn").hide();
-    $("#addAnotherFileBtn").hide();
-    $("#printForm").hide();  // Hide the file-related fields initially
-    $("#personalInfoForm").hide();  // Hide personal info form initially
-
-    // File input trigger
-    $("#fileInput").css({
-        position: "absolute",
-        left: "-9999px"
-    });
-
-    $("#dropzone").on("click", function (event) {
-        if (!$(event.target).is("#fileInput")) {
-            $("#fileInput").click();
-        }
-    });
-
-    $("#fileInput").on("change", function (event) {
-        handleFiles(event.target.files);
-        $(this).val("");  // Reset the file input after selection
-    });
-
-    // Drag-and-drop functionality
-    $("#dropzone").on("dragover", function (event) {
-        event.preventDefault();
-    });
-
-    $("#dropzone").on("drop", function (event) {
-        event.preventDefault();
-        handleFiles(event.originalEvent.dataTransfer.files);
-    });
-
-    function handleFiles(files) {
-        if (files.length === 0) return;
-
-        let file = files[0]; // Process one file at a time
-        let fileIndex = uploadedFiles.length;
-        uploadedFiles.push(file);
-
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            let fileData = e.target.result;
-            let fileEntry = $("<div class='swiper-slide col-12 col-sm-6 col-md-4 text-center'></div>");
-
-            let removeBtn = $("<button class='btn btn-danger btn-sm remove-file' data-index='" + fileIndex + "'>Remove</button>");
-            removeBtn.on("click", function () {
-                let index = $(this).data("index");
-                uploadedFiles.splice(index, 1);
-                fileEntry.remove();
-                $(`.file-group[data-index='${index}']`).remove();
-            });
-
-            if (file.type.startsWith("image/")) {
-                let img = $("<img>").attr("src", URL.createObjectURL(file)).addClass("file-preview img-thumbnail");
-                fileEntry.append(img).append(removeBtn);
-                addFileFields(file, fileIndex, 1);  // Show file fields
-            } else if (file.type === "application/pdf") {
-                renderPDFPreview(fileData, fileEntry, file, fileIndex, removeBtn);
-            }
-
-            $("#previewSlider").append(fileEntry);
-        };
-        reader.readAsArrayBuffer(file);
-
-        $("#continueBtn").fadeIn();
-        $("#previewContainer").fadeIn();
-    }
-
-    function renderPDFPreview(fileData, fileEntry, file, fileIndex, removeBtn) {
-        let loadingTask = pdfjsLib.getDocument({ data: fileData });
-
-        loadingTask.promise.then(function (pdf) {
-            let totalPages = pdf.numPages;
-            let currentPage = 1;
-
-            let canvas = $("<canvas class='pdf-canvas'></canvas>")[0];
-            let context = canvas.getContext("2d");
-
-            function renderPage(pageNumber) {
-                pdf.getPage(pageNumber).then(function (page) {
-                    let scale = 0.5;
-                    let viewport = page.getViewport({ scale: scale });
-
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
-
-                    let renderContext = {
-                        canvasContext: context,
-                        viewport: viewport,
-                    };
-
-                    page.render(renderContext);
-                });
-            }
-
-            renderPage(currentPage);
-
-            let prevBtn = $("<button class='btn btn-secondary btn-sm mx-1' id='prevBtn'>⬅️ Prev</button>");
-            let nextBtn = $("<button class='btn btn-secondary btn-sm mx-1' id='nextBtn'>Next ➡️</button>");
-
-            prevBtn.on("click", function () {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderPage(currentPage);
-                }
-            });
-
-            nextBtn.on("click", function () {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderPage(currentPage);
-                }
-            });
-
-            let navContainer = $("<div class='text-center mt-2'></div>").append(prevBtn, nextBtn);
-            let previewContainer = $("<div class='pdf-preview text-center'></div>").append(canvas, navContainer);
-
-            fileEntry.append(previewContainer, removeBtn);
-
-            addFileFields(file, fileIndex, totalPages);
-        });
-    }
-
-    function addFileFields(file, index, numPages) {
-        $("#file-upload-container").append(`
-            <div class="file-group mt-3 p-3 border rounded" data-index="${index}">
-                <h5>File: ${file.name}</h5>
-                <input type="hidden" name="files[${index}][name]" value="${file.name}">
-                
-                <label>Number of Pages</label>
-                <input type="text" name="files[${index}][num_pages]" class="form-control" value="${numPages}" readonly>
-
-                <label>Size of Paper</label>
-                <select name="files[${index}][size]" class="form-control">
-                    <option value="A4">A4</option>
-                    <option value="A3">A3</option>
-                </select>
-
-                <label>Impression</label>
-                <select name="files[${index}][impression]" class="form-control">
-                    <option value="color">Color</option>
-                    <option value="black_white">Black & White</option>
-                    <option value="mixed">Mixed</option>
-                </select>
-
-                <label>Orientation</label>
-                <select name="files[${index}][orientation]" class="form-control">
-                    <option value="portrait">Portrait</option>
-                    <option value="landscape">Landscape</option>
-                </select>
-
-                <label>Front and Back</label>
-                <input type="checkbox" name="files[${index}][front_back]" value="1">
-
-                <label>Need Binding</label>
-                <input type="checkbox" name="files[${index}][binding]" value="1">
-            </div>
-        `);
-    }
-
-    // Show next step (File fields) after clicking continue
-    $("#continueBtn").on("click", function () {
-        $("#previewContainer").fadeOut();
-        $("#dropzone").fadeOut();
-        $("#printForm").fadeIn();
-        $("#addAnotherFileBtn").fadeIn();
-        $("html, body").animate({
-            scrollTop: $("#printForm").offset().top
-        }, 500);
-    });
-
-    // Handle adding another file
-    $("#addAnotherFileBtn").on("click", function () {
-        $("#dropzone").fadeIn();
-        $("#previewContainer").hide();
-        $("#printForm").hide();
-        $(this).hide();
-    });
-
-    // Handle adding another file
-    $("#continueToPersonalInfoBtn").on("click", function () {
-        $("#personalInfoForm").fadeIn();
-        $("#previewContainer").hide();
-        $("#printForm").hide();
-        $(this).hide();
-    });
-
-    // Show personal info form after all files are uploaded
-    $("#printForm").on("submit", function (e) {
-        e.preventDefault();
-
-        let formData = new FormData(this);
-
-        uploadedFiles.forEach((file, index) => {
-            formData.append(`files[${index}]`, file);
-            let numPages = parseInt($(`input[name='files[${index}][num_pages]']`).val()) || 1;
-            formData.append(`num_pages[${index}]`, numPages);
-        });
-
-        $("#personalInfoForm").fadeIn(); // Show personal information form
-        $("#printForm").hide(); // Hide print settings form
-
-        $("html, body").animate({
-            scrollTop: $("#personalInfoForm").offset().top
-        }, 500);
-    });
-
-    // Submit the entire order
-    $("#submitOrderBtn").on("click", function () {
-        let formData = new FormData($("#personalInfoForm")[0]);
-
-        $.ajax({
-            url: "/order/submit",
-            type: "POST",
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function () {
-                alert("Order submitted successfully!");
-                location.reload();
-            },
-            error: function (xhr) {
-                console.error(xhr.responseText);
-                alert("Error submitting order. Please try again.");
-            }
-        });
-    });
-});
-
-</script> --}}
 <script>
     $(document).ready(function () {
     let uploadedFiles = [];
@@ -340,9 +108,14 @@
     function handleFiles(files) {
         if (files.length === 0) return;
 
-        let file = files[0]; // Single file upload at a time
-        let fileIndex = uploadedFiles.length;
-        uploadedFiles.push(file);
+        let file = files[0]; // Get the latest uploaded file
+        uploadedFiles.push(file); // Store all files but show only the latest
+
+        // Hide previous previews and fields but keep their data for submission
+        $(".swiper-slide").hide();
+        $(".file-group").hide();
+
+        let fileIndex = uploadedFiles.length - 1; // Latest file index
 
         let reader = new FileReader();
         reader.onload = function (e) {
@@ -355,12 +128,14 @@
                 uploadedFiles.splice(index, 1);
                 fileEntry.remove();
                 $(`.file-group[data-index='${index}']`).remove();
+                $("#previewContainer").hide();
+                $("#dropzone").fadeIn();
             });
 
             if (file.type.startsWith("image/")) {
                 let img = $("<img>").attr("src", URL.createObjectURL(file)).addClass("file-preview img-thumbnail");
                 fileEntry.append(img).append(removeBtn);
-                addFileFields(file, fileIndex, 1);  // Default to 1 page
+                addFileFields(file, fileIndex, 1); // Default to 1 page
             } else if (file.type === "application/pdf") {
                 renderPDFPreview(fileData, fileEntry, file, fileIndex, removeBtn);
             }
@@ -429,7 +204,9 @@
     }
 
     function addFileFields(file, index, numPages) {
-        $("#file-upload-container").append(`
+        $(".file-group").hide(); // Hide previous file fields but keep them for submission
+
+        let fileFields = `
             <div class="file-group mt-3 p-3 border rounded" data-index="${index}">
                 <h5>File: ${file.name}</h5>
                 <input type="hidden" name="files[${index}][name]" value="${file.name}">
@@ -462,7 +239,9 @@
                 <label>Need Binding</label>
                 <input type="checkbox" name="files[${index}][binding]" value="1">
             </div>
-        `);
+        `;
+
+        $("#file-upload-container").append(fileFields);
     }
 
     $("#continueBtn").on("click", function () {
@@ -476,6 +255,7 @@
         $("#dropzone").fadeIn();
         $("#previewContainer").hide();
         $("#printForm").hide();
+        $("#personalInfoForm").hide();
     });
 
     $("#continueToPersonalInfoBtn").on("click", function () {
@@ -483,13 +263,6 @@
         $("#previewContainer").hide();
         $("#printForm").hide();
         $("#addAnotherFileBtn").fadeIn();
-    });
-
-    $("#addAnotherFileBtn").on("click", function () {
-        $("#dropzone").fadeIn();
-        $("#previewContainer").hide();
-        $("#printForm").hide();
-        $("#personalInfoForm").hide();
     });
 
     $("#submitOrderBtn").on("click", function (e) {
@@ -527,5 +300,6 @@
 });
 
 </script>
+
 
 @endsection
